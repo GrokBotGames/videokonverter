@@ -156,7 +156,7 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
       <button class="btn pri" id="ipick">Bilder auswählen</button>
       <button class="btn" id="ipickdir">Ordner wählen</button>
     </div>
-    <input type="file" id="ifile" accept="image/*" multiple hidden>
+    <input type="file" id="ifile" accept="image/*,.heic,.heif,.tif,.tiff,.avif" multiple hidden>
     <input type="file" id="idirfile" webkitdirectory multiple hidden>
   </div>
   <div class="card">
@@ -168,7 +168,7 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
         <select id="i_fmt"><option value="orig">wie Original (PNG bleibt PNG)</option><option value="jpeg">JPEG</option><option value="webp">WebP (kleiner)</option></select></div>
       <div><label class="f">Qualität: <b id="i_qv">80</b> %</label><input type="range" id="i_q" min="40" max="100" value="80"></div>
     </div>
-    <div class="note" style="margin-top:8px">Dateiname: <code>name_resized.jpg</code> · Ordnerstruktur bleibt erhalten · EXIF/GPS-Daten werden entfernt (Drehung wird übernommen).</div>
+    <div class="note" style="margin-top:8px">Dateiname: <code>name_resized.jpg</code> · Ordnerstruktur bleibt erhalten · <b>Metadaten werden mitkopiert</b> (GPS, Aufnahmedatum, Kamera, IPTC, Farbprofil). Die Drehung wird ins Bild übernommen und in den Metadaten auf normal gesetzt, die Pixelmaße werden angepasst. In der ZIP bleibt die Original-Speicherzeit erhalten; im Zielordner setzt der Browser die Dateizeit auf „jetzt“ – die Original-Speicherzeit steht zusätzlich in den Metadaten (XMP).</div>
     <div class="row" style="margin-top:12px">
       <button class="btn" id="idest">📁 Zielordner wählen</button>
       <button class="btn sm" id="idestoff" hidden>Zurücksetzen</button>
@@ -221,6 +221,17 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
       <li>Das Ergebnis ist <b>MP4 (H.264 + AAC)</b>, spielt auf praktisch allen Geräten. Nur wenn der Browser H.264 nicht kodieren kann, entsteht <b>WebM (VP9 + Opus)</b>.</li>
       <li>Videos mit mehreren Audiospuren: Es werden alle Spuren übernommen, die der Browser dekodieren kann.</li>
       <li>Beim <b>Kürzen</b> wird neu kodiert, der Schnitt ist bildgenau.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Bilder und Metadaten</h2>
+
+    <ul>
+      <li>Beim Verkleinern werden <b>EXIF, XMP, IPTC und das ICC-Farbprofil</b> übernommen: Standort (GPS), Aufnahmedatum (<code>DateTimeOriginal</code>, <code>CreateDate</code>), Kamera, Autor, Beschreibung.</li>
+      <li>Die Drehung aus dem Original wird ins Bild selbst geschrieben, in den Metadaten steht danach Orientierung 1 (normal). Breite und Höhe in den Metadaten werden an die neue Größe angepasst. Eine evtl. enthaltene Miniaturvorschau wird nicht übernommen.</li>
+      <li><b>Speicherzeit der Datei:</b> In einer ZIP-Datei behält jeder Eintrag die Original-Speicherzeit (<code>lastModified</code>). Beim Speichern in einen Zielordner oder per Download kann der Browser die Dateizeit auf dem Laufwerk nicht setzen (sie wird „jetzt“). Deshalb schreiben wir die Original-Speicherzeit zusätzlich als <code>vk:OriginalFileModifyDate</code> in die XMP-Metadaten.</li>
+      <li>HEIC, TIFF, AVIF und BMP werden – wenn der Browser sie lesen kann – als JPEG (oder in das gewählte Format) gespeichert, die Metadaten soweit möglich mitgenommen. Der Browser kann HEIC/TIFF nicht als solches zurückschreiben.</li>
+      <li>Wird ein Bild nicht verkleinert und bleibt im selben Format, bleibt die Datei byte-genau erhalten (alle Metadaten unverändert).</li>
     </ul>
   </div>
   <div class="card">

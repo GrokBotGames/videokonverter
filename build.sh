@@ -13,7 +13,7 @@ AAC=vendor/aac/package/dist/bundles/mediabunny-aac-encoder.min.js
   cat "$AAC"; echo
   echo '</script>'
   echo '<script>'
-  cat src/util.js src/video.js src/images.js src/main.js
+  cat src/util.js src/video.js src/meta.js src/images.js src/main.js
   echo '</script></body></html>'
 } > Videokonverter.html
 echo "built $(wc -c < Videokonverter.html) bytes"

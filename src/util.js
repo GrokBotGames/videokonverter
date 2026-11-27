@@ -30,9 +30,9 @@ function updateDestUI(){
     const t=$('#'+k+'desttxt'),off=$('#'+k+'destoff'),h=$('#'+k+'desthelp'),b=$('#'+k+'dest');
     if(!hasPicker){b.hidden=true;t.textContent='';h.textContent=k==='v'?'Dein Browser kann keinen Zielordner wählen – das Ergebnis landet in einem temporären Speicher und wird danach heruntergeladen.':'Dein Browser kann keinen Zielordner wählen – es wird eine ZIP-Datei bzw. ein Download erzeugt.';continue}
     if(Dest.dir){t.innerHTML='Ausgabe direkt nach: <b>'+esc(Dest.name)+'</b>';off.hidden=false;b.textContent='📁 Anderen Ordner wählen';
-      h.textContent=k==='v'?'Die fertigen Videos werden sofort in diesen Ordner geschrieben (am besten für sehr große Dateien). Vorhandene Dateien werden nie überschrieben.':'Die verkleinerten Bilder werden samt Ordnerstruktur dorthin geschrieben. Originale bleiben unberührt, vorhandene Dateien werden nie überschrieben.'}
+      h.textContent=k==='v'?'Die fertigen Videos werden sofort in diesen Ordner geschrieben (am besten für sehr große Dateien). Vorhandene Dateien werden nie überschrieben.':'Die verkleinerten Bilder werden samt Ordnerstruktur dorthin geschrieben. Originale bleiben unberührt, vorhandene Dateien werden nie überschrieben. Der Browser setzt die Dateizeit auf „jetzt“; die Original-Speicherzeit steht in den Metadaten.'}
     else{t.textContent='';off.hidden=true;b.textContent='📁 Zielordner wählen';
-      h.textContent=k==='v'?'Ohne Zielordner wird jedes fertige Video zwischengespeichert und kann dann heruntergeladen werden. Für Dateien über ca. 4 GB empfohlen: Zielordner wählen.':'Ohne Zielordner entsteht eine ZIP-Datei (bei einem einzelnen Bild direkt das Bild).'}
+      h.textContent=k==='v'?'Ohne Zielordner wird jedes fertige Video zwischengespeichert und kann dann heruntergeladen werden. Für Dateien über ca. 4 GB empfohlen: Zielordner wählen.':'Ohne Zielordner entsteht eine ZIP-Datei (bei einem einzelnen Bild direkt das Bild). In der ZIP bleibt die Original-Speicherzeit erhalten.'}
   }
 }
 function wireDest(){for(const k of ['v','i']){$('#'+k+'dest').onclick=chooseDest;$('#'+k+'destoff').onclick=()=>{Dest.dir=null;Dest.name='';updateDestUI()}}updateDestUI()}
