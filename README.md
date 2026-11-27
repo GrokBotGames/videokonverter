@@ -1,4 +1,4 @@
-# Videokonverter
+# Video und Bild Konverter
 
 Videos und Bilder **kleiner rechnen – komplett lokal im Browser**. Kein Upload, kein Tracking, keine Werbung, keine Online-Dienste zur Laufzeit. Gebaut vor allem für **Xbox-Screenrecord-Clips** (MP4, H.264, 1080p/4K, 30/60 fps), aber auch für lange Bildschirmaufnahmen und Webinar-Mitschnitte (mehrere GB, 2 Stunden).
 
@@ -74,7 +74,7 @@ Testbilder 2000×1000, Orientation=6 (visuell 1000×2000), GPS Berlin (52.520008
 `unzip -l` zeigt das Datum 2023-03-20 11:22, `zipinfo -T` die genaue Zeit 20230320.112233 (Unix-Extrafeld; die DOS-Zeit hat 2-Sekunden-Raster und steht auf 11:22:32). Beim Entpacken setzt `unzip` diese Zeit als Dateizeit. Im Zielordner bleibt die Browser-Dateizeit „jetzt“, die Originalzeit steht in `XMP-vk:OriginalFileModifyDate` (2023-03-20 10:22:33Z). Miniatur-Vorschaubilder werden nicht übernommen. Maker Notes bleiben typischerweise erhalten (EXIF wird möglichst an Ort und Stelle geändert).
 
 ## Selbst bauen
-`./build.sh` (setzt `vendor/` mit den npm-Paketen `mediabunny@1.66.5` und `@mediabunny/aac-encoder@1.66.5` voraus – `npm pack`, entpacken) erzeugt `Videokonverter.html`.
+`./build.sh` (setzt `vendor/` mit den npm-Paketen `mediabunny@1.66.5` und `@mediabunny/aac-encoder@1.66.5` voraus – `npm pack`, entpacken) erzeugt weiterhin `Videokonverter.html` (Dateiname unverändert; die Oberfläche heißt „Video und Bild Konverter“).
 
 ## Lizenzen
 Eigener Code: © Grok Bot Games, frei nutzbar. Eingebettet (unverändert): **Mediabunny** und **@mediabunny/aac-encoder** unter **MPL-2.0**, darin der AAC-Encoder aus **FFmpeg (LGPL-2.1+)** als WebAssembly. Lizenztexte im Ordner `licenses/`.

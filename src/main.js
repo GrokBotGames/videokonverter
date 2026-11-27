@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const {$,$$}=VK;
-$('#ver').textContent='v1.1 · '+new Date().toLocaleDateString('de-DE');
+$('#ver').textContent='v1.2 · '+new Date().toLocaleDateString('de-DE');
 $$('.tabs button').forEach(b=>b.onclick=()=>{$$('.tabs button').forEach(x=>x.classList.toggle('on',x===b));$$('section.tab').forEach(s=>s.classList.toggle('on',s.id==='tab-'+b.dataset.tab))});
 VK.wireDest();
 VKV.init();VKI.init();
