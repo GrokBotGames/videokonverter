@@ -165,13 +165,16 @@ async function run(){
         const blob=r.blob,keepOrig=!!r.kept;
         const base=x.file.name.replace(/\.[^.]+$/,'');
         const ext=keepOrig?(x.file.name.match(/\.([^.]+)$/)||['','jpg'])[1]:r.oi.ext;
-        const outName=base+'_resized.'+ext;
-        const relOut=(x.parts.length?x.parts.join('/')+'/':'')+outName;
+        const outName=VK.sanitizeFileName(base+'_resized.'+ext,{ext:'.'+ext,fallbackPrefix:'bild',fallbackSuffix:'_resized'});
+        const safeParts=(x.parts||[]).map(p=>VK.sanitizeFileName(p,{ext:'',fallbackPrefix:'ordner',maxLen:80}));
+        const relOut=(safeParts.length?safeParts.join('/')+'/':'')+outName;
         const mtime=x.file.lastModified||Date.now();
-        if(zip){let p=relOut,n=1;while(used.has(p.toLowerCase())){n++;p=(x.parts.length?x.parts.join('/')+'/':'')+base+'_resized ('+n+').'+ext}used.add(p.toLowerCase());
+        if(zip){let p=relOut,n=1;while(used.has(p.toLowerCase())){n++;p=(safeParts.length?safeParts.join('/')+'/':'')+VK.sanitizeFileName(base+'_resized ('+n+').'+ext,{ext:'.'+ext,fallbackPrefix:'bild',fallbackSuffix:'_resized'});}used.add(p.toLowerCase());
           await zip.add(p,new Uint8Array(await blob.arrayBuffer()),mtime)}
         else if(Dest.dir){
-          const d=await VK.subDir(Dest.dir,x.parts);const fn=await VK.uniqueName(d,outName);const fh=await d.getFileHandle(fn,{create:true});const w=await fh.createWritable();await w.write(blob);await w.close()}
+          const d=await VK.subDir(Dest.dir,x.parts);
+          const made=await VK.createFileInDir(d,outName,{fallbackPrefix:'bild',fallbackSuffix:'_resized',ext:'.'+ext});
+          const w=await made.fh.createWritable();await w.write(blob);await w.close()}
         else{
           const fileOut=new File([blob],outName,{type:blob.type||r.oi.mime,lastModified:mtime});
           const url=URL.createObjectURL(fileOut);VK.triggerDownload(url,outName);setTimeout(()=>URL.revokeObjectURL(url),60000)}

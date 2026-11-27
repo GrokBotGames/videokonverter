@@ -112,7 +112,7 @@ async function analyzeBasic(it){
 
 /* ---------- Rendering der Karten ---------- */
 function itemEl(it){let el=document.querySelector('.item[data-id="'+it.id+'"]');if(!el){el=document.createElement('div');el.className='item';el.dataset.id=it.id;$('#queue').appendChild(el)}return el}
-function outName(it,ext){const dot=it.file.name.lastIndexOf('.');return(dot>0?it.file.name.slice(0,dot):it.file.name)+'_klein.'+(ext||'mp4')}
+function outName(it,ext){const dest=ext||'mp4';const dot=it.file.name.lastIndexOf('.');const stem=dot>0?it.file.name.slice(0,dot):it.file.name;return VK.sanitizeFileName(stem+'_klein.'+dest,{ext:'.'+dest.replace(/^\./,''),fallbackPrefix:'video',fallbackSuffix:'_klein'})}
 function renderItem(it){
   const el=itemEl(it);const i=it.info;
   const pl=i&&it.state!=='error'?makePlan(it,it.snap):null;
@@ -245,7 +245,7 @@ async function convertWC(it,pl,prog){
   if(!cod)throw new Error('Dein Browser kann weder H.264 noch VP9/VP8 kodieren. Bitte Chrome oder Edge benutzen.');
   const input=new MBN.Input({source:new MBN.BlobSource(it.file),formats:MBN.ALL_FORMATS});
   const name=outName(it,cod.ext);
-  const out=await VK.openOutput(name,it.parts);out.mime=cod.mime;
+  const out=await VK.openOutput(name,it.parts,{fallbackPrefix:'video',fallbackSuffix:'_klein',ext:'.'+(cod.ext||'mp4')});out.mime=cod.mime;
   const fmt=cod.container==='mp4'?new MBN.Mp4OutputFormat({fastStart:out.writable?false:'in-memory'}):new MBN.WebMOutputFormat();
   const output=new MBN.Output({format:fmt,target:out.target()});
   const v={codec:cod.vc,bitrate:pl.vb,bitrateMode:'constant',forceTranscode:true,keyFrameInterval:2,fit:'fill'};

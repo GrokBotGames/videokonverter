@@ -221,6 +221,7 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
       <li>Das Ergebnis ist <b>MP4 (H.264 + AAC)</b>, spielt auf praktisch allen Geräten. Nur wenn der Browser H.264 nicht kodieren kann, entsteht <b>WebM (VP9 + Opus)</b>.</li>
       <li>Videos mit mehreren Audiospuren: Es werden alle Spuren übernommen, die der Browser dekodieren kann.</li>
       <li>Beim <b>Kürzen</b> wird neu kodiert, der Schnitt ist bildgenau.</li>
+      <li><b>Dateinamen:</b> Zeichen, die Windows oder Chrome/Edge im Zielordner nicht erlauben (z. B. <code>: ? * &lt; &gt;</code>, Steuerzeichen oder bestimmte Emoji-Kombinationen), werden automatisch ersetzt. Der Name in der Liste bleibt unverändert. Falls ein Name trotzdem abgelehnt wird, speichern wir unter einem kurzen Namen wie <code>video_20261127_190838_klein.mp4</code>.</li>
     </ul>
   </div>
   <div class="card">

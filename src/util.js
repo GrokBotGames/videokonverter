@@ -37,21 +37,127 @@ function updateDestUI(){
 }
 function wireDest(){for(const k of ['v','i']){$('#'+k+'dest').onclick=chooseDest;$('#'+k+'destoff').onclick=()=>{Dest.dir=null;Dest.name='';updateDestUI()}}updateDestUI()}
 
-/* ---------- eindeutiger Dateiname im Zielordner (nie überschreiben) ---------- */
-async function uniqueName(dir,name){
-  const dot=name.lastIndexOf('.');const base=dot>0?name.slice(0,dot):name,ext=dot>0?name.slice(dot):'';
-  let n=name,i=1;
-  for(;;){try{await dir.getFileHandle(n);i++;n=base+' ('+i+')'+ext}catch(e){return n}}
+/* ---------- Dateinamen für Windows / Chrome File System Access ---------- */
+/* Chrome/Edge werfen "Name is not allowed", wenn getFileHandle/getDirectoryHandle
+   einen Namen mit Windows-verbotenen Zeichen (<>:"/\|?*), Steuer- oder Formatzeichen
+   (Unicode Cc/Cf, z. B. Zero-Width-Joiner in Emojis), reservierten Gerätenamen,
+   führendem/abschließendem Punkt, Leerzeichen oder Tilde, oder mit "/" bekommt.
+   uniqueName hat diesen Fehler zuvor als "Datei existiert nicht" missverstanden. */
+const WIN_ILLEGAL=/[<>:"/\\|?*\u0000-\u001F\u007F]/g;
+const WIN_RESERVED=/^(con|prn|aux|nul|com[0-9]|lpt[0-9]|clock\$)$/i;
+function stampName(d){
+  d=d||new Date();
+  const p=n=>String(n).padStart(2,'0');
+  return d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'_'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());
 }
-async function subDir(root,parts){let d=root;for(const p of parts)d=await d.getDirectoryHandle(p,{create:true});return d}
+function splitExt(name,forcedExt){
+  if(forcedExt!=null&&forcedExt!==false){
+    let ext=String(forcedExt||'');
+    if(ext&&ext[0]!=='.')ext='.'+ext;
+    const n=String(name||'');
+    const base=(ext&&n.toLowerCase().endsWith(ext.toLowerCase()))?n.slice(0,-ext.length):n;
+    return{base,ext};
+  }
+  const n=String(name||'');
+  const m=n.match(/(\.[A-Za-z0-9]{1,8})$/);
+  return m?{base:n.slice(0,-m[1].length),ext:m[1]}:{base:n,ext:''};
+}
+function sanitizeFileName(raw,opts){
+  opts=opts||{};
+  const maxLen=opts.maxLen||150;
+  const prefix=opts.fallbackPrefix||'datei';
+  const {base:rawBase,ext}=splitExt(raw,opts.ext===undefined?false:opts.ext);
+  let base=String(rawBase||'');
+  try{base=base.normalize('NFC')}catch(e){}
+  // Formatzeichen entfernen (Chrome: [:Cf:], z. B. ZWJ U+200D in 👨‍💻, BOM, Soft Hyphen)
+  try{base=base.replace(/\p{Cf}/gu,'')}catch(e){base=base.replace(/[\u00AD\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g,'')}
+  // Windows-verbotene Zeichen + Steuerzeichen; auch typographische Vollbreiten-Varianten
+  base=base.replace(WIN_ILLEGAL,'_').replace(/[\uFF0F\uFF5C\uFF1A\uFF1F\uFF1C\uFF1E\uFF02]/g,'_');
+  base=base.replace(/^[.\s~]+|[.\s~]+$/g,'');
+  base=base.replace(/[.\s]+$/g,'');
+  if(!base)base=prefix;
+  if(WIN_RESERVED.test(base))base=base+'_datei';
+  const extSafe=(ext||'').replace(WIN_ILLEGAL,'').slice(0,9);
+  const budget=Math.max(1,maxLen-extSafe.length);
+  const chars=[...base];
+  if(chars.length>budget){base=chars.slice(0,budget).join('').replace(/[.\s~]+$/g,'');if(!base)base=prefix}
+  if(WIN_RESERVED.test(base))base=base+'_datei';
+  return base+extSafe;
+}
+function fallbackFileName(opts){
+  opts=opts||{};
+  const prefix=opts.fallbackPrefix||'datei';
+  const suffix=opts.fallbackSuffix||'';
+  let ext=opts.ext||'';if(ext&&ext[0]!=='.')ext='.'+ext;
+  return sanitizeFileName(prefix+'_'+stampName()+suffix+ext,{ext,fallbackPrefix:prefix});
+}
+function isNotFoundErr(e){return e&&(e.name==='NotFoundError'||e.code===8||/NotFound/i.test(e.name||'')||/(not found|not exist)/i.test(e.message||''))}
+function isBadNameErr(e){return e&&(/not allowed|not a valid|illegal|invalid name|InvalidState/i.test(e.message||'')||e.name==='TypeError'&&/Name/i.test(e.message||''))}
+
+/* eindeutiger, bereinigter Dateiname im Zielordner (nie überschreiben) */
+async function uniqueName(dir,name,opts){
+  opts=opts||{};
+  let n=sanitizeFileName(name,opts);
+  const ext=(splitExt(n,opts.ext===undefined?false:opts.ext).ext)||'';
+  let i=1;
+  for(;;){
+    try{
+      await dir.getFileHandle(n);
+      i++;
+      const {base}=splitExt(n,ext||false);
+      n=sanitizeFileName(base+' ('+i+')'+ext,{...opts,ext});
+    }catch(e){
+      if(isBadNameErr(e)){
+        n=fallbackFileName({...opts,ext:ext||opts.ext});
+        // Fallback ebenfalls auf Kollision prüfen, aber Endlosschleife vermeiden
+        if(i>50)return n;
+        i++;
+        continue;
+      }
+      if(isNotFoundErr(e)||!e)return n;
+      throw e;
+    }
+  }
+}
+async function createFileInDir(dir,name,opts){
+  opts=opts||{};
+  const attempts=[name,fallbackFileName(opts)];
+  let last;
+  for(const cand of attempts){
+    try{
+      const n=await uniqueName(dir,cand,opts);
+      const fh=await dir.getFileHandle(n,{create:true});
+      return{name:n,fh};
+    }catch(e){last=e;if(!isBadNameErr(e))throw e}
+  }
+  throw last||new Error('Dateiname im Zielordner ist nicht erlaubt.');
+}
+async function subDir(root,parts){
+  let d=root;
+  for(const p of (parts||[])){
+    const segs=String(p||'').split(/[/\\]+/).filter(Boolean);
+    for(const seg of segs){
+      let n=sanitizeFileName(seg,{ext:'',fallbackPrefix:'ordner',maxLen:80});
+      try{d=await d.getDirectoryHandle(n,{create:true})}
+      catch(e){
+        if(!isBadNameErr(e))throw e;
+        n=sanitizeFileName('ordner_'+stampName(),{ext:'',fallbackPrefix:'ordner',maxLen:80});
+        d=await d.getDirectoryHandle(n,{create:true});
+      }
+    }
+  }
+  return d;
+}
 
 /* ---------- Ausgabe öffnen: Zielordner > OPFS > RAM ---------- */
 // liefert {kind, name, writable|null, finish(), abort(), getFile(), cleanup()}
-async function openOutput(name,parts){
+async function openOutput(name,parts,opts){
   const out={kind:'ram',name,writable:null,fh:null,tmpName:null,dirHandle:null,blob:null,created:false};
   if(Dest.dir){
     const d=await subDir(Dest.dir,parts||[]);
-    out.name=await uniqueName(d,name);out.fh=await d.getFileHandle(out.name,{create:true});out.created=true;out.dirHandle=d;
+    const ext=(splitExt(name).ext)||(opts&&opts.ext)||'';
+    const made=await createFileInDir(d,name,{fallbackPrefix:(opts&&opts.fallbackPrefix)||'video',fallbackSuffix:(opts&&opts.fallbackSuffix)!=null?opts.fallbackSuffix:'_klein',ext,maxLen:(opts&&opts.maxLen)||150});
+    out.name=made.name;out.fh=made.fh;out.created=true;out.dirHandle=d;
     out.writable=await out.fh.createWritable();out.kind='folder';return wrapOut(out)}
   if(opfsOk){
     const r=await opfsRoot();out.tmpName='vk_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
@@ -76,7 +182,7 @@ function wrapOut(o){
     if(o.kind==='opfs'&&o.dirHandle){try{await o.dirHandle.removeEntry(o.tmpName)}catch(e){}}o.blob=null};
   return o;
 }
-function triggerDownload(url,name){const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),1000)}
+function triggerDownload(url,name){const a=document.createElement('a');a.href=url;a.download=sanitizeFileName(name||'download');document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),1000)}
 
 /* ---------- Dateien einsammeln (Dateien, Ordner, rekursiv) ---------- */
 async function readAllEntries(reader){const all=[];for(;;){const b=await new Promise((res,rej)=>reader.readEntries(res,rej));if(!b.length)break;all.push(...b)}return all}
@@ -111,5 +217,5 @@ function setupDrop(el,handler){
 }
 function banner(html,cls){const b=document.createElement('div');b.className='b '+(cls||'');b.innerHTML=html;$('#banner').appendChild(b);return b}
 
-window.VK={$,$$,MB,fmtSize,fmtTime,fmtEta,parseTime,esc,pct,evenInt,sleep,hasPicker,hasSavePicker,Dest,chooseDest,updateDestUI,wireDest,uniqueName,subDir,openOutput,triggerDownload,collectFromDrop,pickFolder,fromInput,setupDrop,banner,isOpfs:()=>opfsOk};
+window.VK={$,$$,MB,fmtSize,fmtTime,fmtEta,parseTime,esc,pct,evenInt,sleep,hasPicker,hasSavePicker,Dest,chooseDest,updateDestUI,wireDest,uniqueName,subDir,openOutput,triggerDownload,collectFromDrop,pickFolder,fromInput,setupDrop,banner,isOpfs:()=>opfsOk,sanitizeFileName,fallbackFileName,createFileInDir,stampName,isBadNameErr,isNotFoundErr};
 })();

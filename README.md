@@ -12,6 +12,7 @@ Videos und Bilder **kleiner rechnen – komplett lokal im Browser**. Kein Upload
 - Drag & Drop (auch **ganze Ordner**), Dateiauswahl, **Warteschlange** mit mehreren Dateien.
 - Anzeige von Auflösung, fps, Codec, Dauer, Größe, **geschätzter Zielgröße**, Fortschrittsbalken mit **Restzeit** und Echtzeit-Faktor, Abbrechen, Vorschau, Download (`name_klein.mp4`), Ergebnis mit neuer Größe und Ersparnis in %.
 - Kürzen (Start/Ende, bildgenau, mit Neu-Kodierung).
+- Dateinamen für den Zielordner werden bereinigt (`sanitizeFileName`: NFC, keine Windows-Zeichen `<>:"/\\|?*`, keine Steuer-/Formatzeichen, kein Punkt/Leerzeichen am Ende, keine reservierten Namen, max. ca. 150 Zeichen, Endung bleibt, Kollisionszähler). Notfalls kurzer Name `video_YYYYMMDD_HHMMSS_klein.mp4` bzw. `bild_…_resized.ext`.
 - Sehr große Dateien: Die Quelle wird per `File.slice` stückweise gelesen (nie komplett im RAM), das Ergebnis **streamend auf die Platte** geschrieben (Zielordner via File System Access API oder OPFS), MP4 mit 64-Bit-Offsets (`co64`, große `mdat`), Backpressure über Decoder-/Encoder-Queues.
 
 **Bilder**
