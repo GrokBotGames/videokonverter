@@ -22,6 +22,13 @@ Videos und Bilder **kleiner rechnen – komplett lokal im Browser**. Kein Upload
 - **Speicherzeit:** In der ZIP behält jeder Eintrag die Original-`lastModified` (DOS-Zeit + Unix-Extrafeld). Im Zielordner kann der Browser die Dateizeit nicht setzen (sie wird „jetzt“) – die Originalzeit steht zusätzlich in `XMP-vk:OriginalFileModifyDate`. Wird ein Bild nicht verkleinert und bleibt im selben Format, bleibt die Datei byte-genau erhalten.
 - HEIC/TIFF/AVIF/BMP werden als JPEG (oder in das gewählte Format) geschrieben; der Browser kann HEIC/TIFF nicht als solches speichern.
 
+## Sicherheit
+- Strikte **Content-Security-Policy** als `<meta http-equiv>`: `default-src 'none'; connect-src 'none'; script-src 'self' 'wasm-unsafe-eval' blob:` plus SHA-256-Hashes der drei eingebetteten Skriptblöcke; `style-src` nur mit Hash der einen `<style>`-Sektion; `img-src`/`media-src` `blob: data:`; `worker-src blob:`; `form-action 'none'`; `base-uri 'none'`; `object-src 'none'`. Zusätzlich `<meta name="referrer" content="no-referrer">`.
+- `frame-ancestors` kann in einem meta-Tag **nicht** gesetzt werden (nur HTTP-Header). GitHub Pages setzt diesen Header nicht. Beim eigenen Hosting: `Content-Security-Policy: frame-ancestors 'none'`.
+- Keine CDN- oder Font-Links, kein `fetch`/`XHR` zur Laufzeit. Dateinamen und Metadaten werden nur per `textContent` ins DOM geschrieben (kein `innerHTML` mit Nutzerdaten).
+- In der eingebetteten Mediabunny-Kopie wird die Tool-Kennung `Mediabunny v…` durch einen leeren String ersetzt. Ausgaben enthalten daher kein `©too` / `MuxingApp` / `WritingApp` / Compressor-Name „Mediabunny“. Quell-Metadaten aus dem Originalvideo werden nicht in die Neu-Kodierung übernommen. Bilder behalten die Original-Metadaten plus `XMP-vk:OriginalFileModifyDate`. Unter Linux schreibt der Software-H.264-Encoder von Chrome gelegentlich die Kennung `Lavc…` in ein SEI-Feld der Videobilder; das kommt aus dem Browser, nicht aus dem Konverter, und lässt sich ohne Eingriff in den Bitstrom nicht entfernen.
+- Die Seite kann als einzelne HTML-Datei gespeichert und unter `file://` geöffnet werden (Chrome/Edge: sicherer Kontext).
+
 ## Technik
 - **WebCodecs** (`VideoDecoder`/`VideoEncoder`/`AudioEncoder`) über **[Mediabunny](https://mediabunny.dev) 1.66.5** (MP4/WebM-Demuxer + Muxer, Konvertierungs-Pipeline), eingebettet.
 - Ausgabe: **MP4 (H.264 + AAC)**. Kann der Browser AAC nicht selbst kodieren (z. B. Chrome unter Linux), wird der mitgelieferte AAC-Encoder (FFmpeg-AAC als WebAssembly, `@mediabunny/aac-encoder`) benutzt. Kann der Browser kein H.264 kodieren → **WebM (VP9/VP8 + Opus)**.
@@ -78,4 +85,13 @@ Testbilder 2000×1000, Orientation=6 (visuell 1000×2000), GPS Berlin (52.520008
 `./build.sh` (setzt `vendor/` mit den npm-Paketen `mediabunny@1.66.5` und `@mediabunny/aac-encoder@1.66.5` voraus – `npm pack`, entpacken) erzeugt weiterhin `Videokonverter.html` (Dateiname unverändert; die Oberfläche heißt „Video und Bild Konverter“).
 
 ## Lizenzen
-Eigener Code: © Grok Bot Games, frei nutzbar. Eingebettet (unverändert): **Mediabunny** und **@mediabunny/aac-encoder** unter **MPL-2.0**, darin der AAC-Encoder aus **FFmpeg (LGPL-2.1+)** als WebAssembly. Lizenztexte im Ordner `licenses/`.
+Eigener Code: © Grok Bot Games, frei nutzbar. Eingebettet: **Mediabunny** und **@mediabunny/aac-encoder** unter **MPL-2.0**, darin der AAC-Encoder aus **FFmpeg (LGPL-2.1+)** als WebAssembly. Lizenztexte im Ordner `licenses/`.
+
+Unveränderte npm-Pakete 1.66.5 (SHA-256 der eingebetteten Bundles, Dateien in `vendor/`):
+
+| Datei | SHA-256 |
+|---|---|
+| `vendor/package/dist/bundles/mediabunny.min.cjs` | `36c271a0888166ea2109668d0ae83eadf1494a84bd7cd30aa06d415054e0b71f` |
+| `vendor/aac/package/dist/bundles/mediabunny-aac-encoder.min.js` | `258a5f22bee833f448789de385c3eac0104b8ef1c039083c8ef737539ca830ec` |
+
+Beim Bau (`./build.sh`) wird in der **Kopie** von Mediabunny in der HTML-Datei die Konstante der Tool-Kennung (`Mediabunny v` plus Versionsnummer) durch einen leeren String ersetzt, damit Ausgabe-Dateien keine Encoder-Signatur tragen. Der AAC-Encoder bleibt byte-genau unverändert. Diese eine Anpassung ist hier und in `build.sh` festgehalten (MPL-2.0).

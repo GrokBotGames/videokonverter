@@ -53,7 +53,7 @@ function buildPresets(){
   const box=$('#presets');box.innerHTML='';
   for(const [k,p] of Object.entries(PRESETS)){
     const b=document.createElement('button');b.className='preset'+(k===S.preset?' on':'');b.dataset.k=k;
-    b.innerHTML='<b>'+esc(p.name)+(p.tag?' <span class="tag">'+esc(p.tag)+'</span>':'')+'</b><small>'+esc(p.desc)+'</small>';
+    const title=VK.h('b','',p.name);if(p.tag){const tg=VK.h('span','tag',p.tag);title.append(' ');title.appendChild(tg)}b.appendChild(title);b.appendChild(VK.h('small','',p.desc));
     b.onclick=()=>{S.preset=k;$$('.preset').forEach(x=>x.classList.toggle('on',x.dataset.k===k));$('#custom').hidden=k!=='custom';refreshAll()};
     box.appendChild(b);
   }
@@ -116,29 +116,66 @@ function outName(it,ext){const dest=ext||'mp4';const dot=it.file.name.lastIndexO
 function renderItem(it){
   const el=itemEl(it);const i=it.info;
   const pl=i&&it.state!=='error'?makePlan(it,it.snap):null;
-  let meta='';
+  const h=VK.h;
+  el.textContent='';
+  const thumb=h('div','thumb','🎬');
+  const col=h('div');
+  const displayName=(it.parts&&it.parts.length?it.parts.join('/')+'/':'')+it.file.name;
+  col.appendChild(h('div','nm',displayName));
+  let meta='Wird analysiert …';
   if(i)meta=i.w+'×'+i.h+' · '+(Math.round(i.fps*10)/10).toString().replace('.',',')+' fps · '+codecName(i.codec)+' · '+fmtTime(i.dur)+' · '+fmtSize(it.file.size);
-  let est='';
-  if(pl&&(it.state==='ready'||it.state==='waiting')){
-    est='Ziel: '+pl.w+'×'+pl.h+(pl.frameRate?' · '+pl.frameRate+' fps':'')+' · geschätzt <b>~'+fmtSize(pl.est)+'</b> ('+(pl.est<it.file.size?'−'+pct(pl.est,it.file.size)+' %':'<span class="warn">nicht kleiner</span>')+')'+(pl.note?'<br><span class="warn">'+esc(pl.note)+'</span>':'');
+  col.appendChild(h('div','meta',meta));
+  if(it.state==='error')col.appendChild(h('div','est err',it.err||'Fehler'));
+  else if(pl&&(it.state==='ready'||it.state==='waiting')){
+    const est=h('div','est');
+    est.append('Ziel: '+pl.w+'×'+pl.h+(pl.frameRate?' · '+pl.frameRate+' fps':'')+' · geschätzt ');
+    est.appendChild(h('b','','~'+fmtSize(pl.est)));
+    est.append(' (');
+    if(pl.est<it.file.size)est.append('−'+pct(pl.est,it.file.size)+' %');
+    else est.appendChild(h('span','warn','nicht kleiner'));
+    est.append(')');
+    if(pl.note){est.appendChild(document.createElement('br'));est.appendChild(h('span','warn',pl.note))}
+    col.appendChild(est);
   }
-  let body='<div class="nm">'+esc((it.parts&&it.parts.length?it.parts.join('/')+'/':'')+it.file.name)+'</div><div class="meta">'+(meta||'Wird analysiert …')+'</div>';
-  if(it.state==='error')body+='<div class="est err">'+esc(it.err||'Fehler')+'</div>';
-  else if(est)body+='<div class="est">'+est+'</div>';
-  if(it.state==='running'||it.state==='waiting')body+='<div class="bar"><i></i></div><div class="pt"></div>';
-  if(it.state==='waiting')body+='<div class="pt">Wartet …</div>';
-  if(it.state==='cancelled')body+='<div class="est warn">Abgebrochen.</div>';
+  if(it.state==='running'||it.state==='waiting'){
+    const bar=document.createElement('progress');bar.className='bar';bar.max=1000;bar.value=0;
+    col.appendChild(bar);
+    col.appendChild(h('div','pt',it.state==='waiting'?'Wartet …':''));
+  }
+  if(it.state==='cancelled')col.appendChild(h('div','est warn','Abgebrochen.'));
   if(it.state==='done'){const r=it.result;
-    body+='<div class="est ok">✔ Fertig: <b>'+fmtSize(r.size)+'</b> (vorher '+fmtSize(it.file.size)+') · Ersparnis <b>'+pct(r.size,it.file.size)+' %</b> · '+esc(r.desc)+'</div>';
-    if(r.size>=it.file.size)body+='<div class="est warn">Hinweis: Das Ergebnis ist nicht kleiner als das Original – wähle eine kleinere Stufe.</div>';
-    if(r.kind==='folder')body+='<div class="pt">Gespeichert in „'+esc(Dest.name||'Zielordner')+'“ als <code>'+esc(r.name)+'</code></div>';}
-  if(it.state==='ready'&&i&&it.state!=='done'){
-    body+='<details'+(it.trim?' open':'')+'><summary>✂ Kürzen (optional)</summary><div class="trim"><label class="f">Start<input type="text" data-t="s" placeholder="0:00" value="'+(it.trim&&it.trim.start?fmtTime(it.trim.start):'')+'"></label><label class="f">Ende<input type="text" data-t="e" placeholder="'+fmtTime(i.dur)+'" value="'+(it.trim&&it.trim.end&&it.trim.end<i.dur?fmtTime(it.trim.end):'')+'"></label><span class="note">z. B. 1:30 oder 1:02:15 – leer lassen = ganzes Video</span></div></details>';
+    const est=h('div','est ok');
+    est.append('✔ Fertig: ');est.appendChild(h('b','',fmtSize(r.size)));
+    est.append(' (vorher '+fmtSize(it.file.size)+') · Ersparnis ');
+    est.appendChild(h('b','',pct(r.size,it.file.size)+' %'));
+    est.append(' · '+(r.desc||''));
+    col.appendChild(est);
+    if(r.size>=it.file.size)col.appendChild(h('div','est warn','Hinweis: Das Ergebnis ist nicht kleiner als das Original – wähle eine kleinere Stufe.'));
+    if(r.kind==='folder'){
+      const pt=h('div','pt');
+      pt.append('Gespeichert in „'+(Dest.name||'Zielordner')+'“ als ');
+      const code=document.createElement('code');code.textContent=r.name;pt.appendChild(code);
+      col.appendChild(pt);
+    }
   }
-  body+='<div class="acts" data-acts></div><div data-prev></div>';
-  el.innerHTML='<div class="thumb">🎬</div><div>'+body+'</div>';
-  if(it.thumb){const th=el.querySelector('.thumb');th.innerHTML='';const c=document.createElement('canvas');c.width=it.thumb.width;c.height=it.thumb.height;c.getContext('2d').drawImage(it.thumb,0,0);th.appendChild(c)}
-  const acts=el.querySelector('[data-acts]');
+  if(it.state==='ready'&&i){
+    const det=document.createElement('details');if(it.trim)det.open=true;
+    const sum=document.createElement('summary');sum.textContent='✂ Kürzen (optional)';det.appendChild(sum);
+    const trim=h('div','trim');
+    const l1=h('label','f','Start');
+    const i1=document.createElement('input');i1.type='text';i1.dataset.t='s';i1.placeholder='0:00';i1.value=(it.trim&&it.trim.start?fmtTime(it.trim.start):'');
+    l1.appendChild(i1);
+    const l2=h('label','f','Ende');
+    const i2=document.createElement('input');i2.type='text';i2.dataset.t='e';i2.placeholder=fmtTime(i.dur);i2.value=(it.trim&&it.trim.end&&it.trim.end<i.dur?fmtTime(it.trim.end):'');
+    l2.appendChild(i2);
+    trim.append(l1,l2,h('span','note','z. B. 1:30 oder 1:02:15 – leer lassen = ganzes Video'));
+    det.appendChild(trim);col.appendChild(det);
+  }
+  const acts=h('div','acts');acts.setAttribute('data-acts','');
+  const prev=document.createElement('div');prev.setAttribute('data-prev','');
+  col.append(acts,prev);
+  el.append(thumb,col);
+  if(it.thumb){const th=el.querySelector('.thumb');th.textContent='';const c=document.createElement('canvas');c.width=it.thumb.width;c.height=it.thumb.height;c.getContext('2d').drawImage(it.thumb,0,0);th.appendChild(c)}
   const mk=(txt,cls,fn)=>{const b=document.createElement('button');b.className='btn sm '+(cls||'');b.textContent=txt;b.onclick=fn;acts.appendChild(b);return b};
   if(it.state==='done'){
     mk('⬇ Herunterladen','pri',()=>download(it));
@@ -156,7 +193,7 @@ function refreshAll(){items.forEach(it=>{if(it.state==='ready'||it.state==='wait
 function updateOutInfo(){
   const el=$('#outinfo');
   if(hasWC&&!FORCE_FALLBACK)el.textContent='Ausgabe: MP4 (H.264 + AAC) – falls dein Browser H.264 nicht kodieren kann, automatisch WebM (VP9 + Opus). Es wird nie hochskaliert.';
-  else el.innerHTML='<span class="warn">Dein Browser unterstützt WebCodecs nicht – es wird der langsamere Echtzeit-Modus (MediaRecorder) benutzt. Ausgabe: MP4 oder WebM je nach Browser.</span>';
+  else{el.textContent='';el.appendChild(VK.h('span','warn','Dein Browser unterstützt WebCodecs nicht – es wird der langsamere Echtzeit-Modus (MediaRecorder) benutzt. Ausgabe: MP4 oder WebM je nach Browser.'));}
 }
 function refreshButtons(){
   const ready=items.filter(i=>i.state==='ready'||i.state==='cancelled'||(i.state==='error'&&false)).length;
@@ -177,7 +214,7 @@ async function download(it){const f=await resultFile(it);if(!it.result.url)it.re
 async function preview(it,el){
   const slot=el.querySelector('[data-prev]');if(slot.firstChild){slot.innerHTML='';return}
   const f=await resultFile(it);if(!it.result.url)it.result.url=URL.createObjectURL(f);
-  const v=document.createElement('video');v.controls=true;v.src=it.result.url;v.onerror=()=>{slot.innerHTML='<div class="note warn">Dein Browser kann dieses Ergebnis nicht abspielen – im Videoplayer deiner Wahl öffnen.</div>'};slot.appendChild(v);
+  const v=document.createElement('video');v.controls=true;v.src=it.result.url;v.onerror=()=>{slot.textContent='';slot.appendChild(VK.h('div','note warn','Dein Browser kann dieses Ergebnis nicht abspielen – im Videoplayer deiner Wahl öffnen.'))};slot.appendChild(v);
 }
 
 /* ---------- Warteschlange ---------- */
@@ -199,8 +236,8 @@ async function startQueue(){
 }
 function beforeUnload(e){e.preventDefault();e.returnValue=''}
 function setProgress(it,p,extra){
-  const el=itemEl(it);const bar=el.querySelector('.bar i'),pt=el.querySelector('.pt');
-  if(bar)bar.style.width=Math.round(p*1000)/10+'%';
+  const el=itemEl(it);const bar=el.querySelector('progress.bar, .bar'),pt=el.querySelector('.pt');
+  if(bar&&'value' in bar){bar.max=1000;bar.value=Math.round(p*1000)}
   if(pt)pt.textContent=extra;
 }
 async function convertItem(it){
@@ -254,7 +291,7 @@ async function convertWC(it,pl,prog){
   v.frameRate=pl.outFps;
   const a=pl.hasA?{codec:cod.ac,bitrate:pl.ab,forceTranscode:true}:{discard:true};
   if(pl.hasA&&pl.mono)a.numberOfChannels=1;
-  const opts={input,output,video:v,audio:a,showWarnings:false};
+  const opts={input,output,video:v,audio:a,showWarnings:false,tags:()=>({})};
   if(pl.trimmed)opts.trim={start:pl.t0,end:pl.t1};
   let conv;
   try{

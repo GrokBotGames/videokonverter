@@ -29,7 +29,7 @@ function updateDestUI(){
   for(const k of ['v','i']){
     const t=$('#'+k+'desttxt'),off=$('#'+k+'destoff'),h=$('#'+k+'desthelp'),b=$('#'+k+'dest');
     if(!hasPicker){b.hidden=true;t.textContent='';h.textContent=k==='v'?'Dein Browser kann keinen Zielordner wählen – das Ergebnis landet in einem temporären Speicher und wird danach heruntergeladen.':'Dein Browser kann keinen Zielordner wählen – es wird eine ZIP-Datei bzw. ein Download erzeugt.';continue}
-    if(Dest.dir){t.innerHTML='Ausgabe direkt nach: <b>'+esc(Dest.name)+'</b>';off.hidden=false;b.textContent='📁 Anderen Ordner wählen';
+    if(Dest.dir){t.textContent='';t.append('Ausgabe direkt nach: ');const bb=document.createElement('b');bb.textContent=Dest.name;t.appendChild(bb);off.hidden=false;b.textContent='📁 Anderen Ordner wählen';
       h.textContent=k==='v'?'Die fertigen Videos werden sofort in diesen Ordner geschrieben (am besten für sehr große Dateien). Vorhandene Dateien werden nie überschrieben.':'Die verkleinerten Bilder werden samt Ordnerstruktur dorthin geschrieben. Originale bleiben unberührt, vorhandene Dateien werden nie überschrieben. Der Browser setzt die Dateizeit auf „jetzt“; die Original-Speicherzeit steht in den Metadaten.'}
     else{t.textContent='';off.hidden=true;b.textContent='📁 Zielordner wählen';
       h.textContent=k==='v'?'Ohne Zielordner wird jedes fertige Video zwischengespeichert und kann dann heruntergeladen werden. Für Dateien über ca. 4 GB empfohlen: Zielordner wählen.':'Ohne Zielordner entsteht eine ZIP-Datei (bei einem einzelnen Bild direkt das Bild). In der ZIP bleibt die Original-Speicherzeit erhalten.'}
@@ -216,6 +216,7 @@ function setupDrop(el,handler){
   el.addEventListener('drop',async e=>{e.preventDefault();c=0;el.classList.remove('over');handler(await collectFromDrop(e.dataTransfer))});
 }
 function banner(html,cls){const b=document.createElement('div');b.className='b '+(cls||'');b.innerHTML=html;$('#banner').appendChild(b);return b}
+function h(tag,cls,text){const n=document.createElement(tag);if(cls)n.className=cls;if(text!=null&&text!=='')n.textContent=text;return n}
 
-window.VK={$,$$,MB,fmtSize,fmtTime,fmtEta,parseTime,esc,pct,evenInt,sleep,hasPicker,hasSavePicker,Dest,chooseDest,updateDestUI,wireDest,uniqueName,subDir,openOutput,triggerDownload,collectFromDrop,pickFolder,fromInput,setupDrop,banner,isOpfs:()=>opfsOk,sanitizeFileName,fallbackFileName,createFileInDir,stampName,isBadNameErr,isNotFoundErr};
+window.VK={$,$$,MB,fmtSize,fmtTime,fmtEta,parseTime,esc,pct,evenInt,sleep,hasPicker,hasSavePicker,Dest,chooseDest,updateDestUI,wireDest,uniqueName,subDir,openOutput,triggerDownload,collectFromDrop,pickFolder,fromInput,setupDrop,banner,h,isOpfs:()=>opfsOk,sanitizeFileName,fallbackFileName,createFileInDir,stampName,isBadNameErr,isNotFoundErr};
 })();

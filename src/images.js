@@ -138,7 +138,7 @@ function summary(txt){
   $('#icount').textContent=list.length+' Bild'+(list.length===1?'':'er')+' in der Liste'+(sk?' · '+sk+' Nicht-Bilddatei'+(sk===1?'':'en')+' übersprungen':'');
   if(txt!==undefined)$('#itxt').textContent=txt;
 }
-function logLine(cls,name,status){const l=$('#ilog');const d=document.createElement('div');d.innerHTML='<span class="'+cls+'">'+(cls==='ok'?'✔':cls==='err'?'✖':'•')+'</span><span>'+esc(name)+'</span><span class="s">'+esc(status)+'</span>';l.appendChild(d);l.scrollTop=l.scrollHeight}
+function logLine(cls,name,status){const l=$('#ilog');const d=document.createElement('div');d.appendChild(VK.h('span',cls,cls==='ok'?'✔':cls==='err'?'✖':'•'));d.appendChild(VK.h('span','',name));d.appendChild(VK.h('span','s',status));l.appendChild(d);l.scrollTop=l.scrollHeight}
 
 /* ---- Verarbeiten ---- */
 async function run(){
@@ -157,7 +157,7 @@ async function run(){
     for(const x of list){
       if(cancel)break;
       const rel=(x.parts.length?x.parts.join('/')+'/':'')+x.file.name;
-      $('#ibar').style.width=(done/total*100)+'%';
+      $('#ibar').value=Math.round(done/total*1000);
       $('#itxt').textContent=(done+1)+' von '+total+' – '+x.file.name;
       let r;
       try{
@@ -187,7 +187,7 @@ async function run(){
       $('#isaved').textContent='Gespart bisher: '+fmtSize(Math.max(0,sumIn-sumOut))+(sumIn?' ('+pct(sumOut,sumIn)+' %)':'');
       await new Promise(r=>setTimeout(r,0));
     }
-    $('#ibar').style.width=(cancel?done/total*100:100)+'%';
+    $('#ibar').value=cancel?Math.round(done/total*1000):1000;
     if(zip&&!cancel){
       await zip.finish();
       let file;
@@ -200,7 +200,7 @@ async function run(){
     }else if(zip&&cancel){if(zout)await zout.abort()}
     $('#itxt').textContent=(cancel?'Abgebrochen. ':'Fertig. ')+(done-fail)+' von '+total+' verarbeitet'+(fail?', '+fail+' Fehler':'')+(Dest.dir&&!cancel?' – gespeichert in „'+Dest.name+'“. Der Browser setzt die Dateizeit im Zielordner auf „jetzt“; die Original-Speicherzeit steht in den Metadaten (und in der ZIP).':'.');
   }catch(e){
-    console.error(e);$('#itxt').innerHTML='<span class="err">'+esc(e&&e.message||String(e))+'</span>';
+    console.error(e);const t=$('#itxt');t.textContent='';t.appendChild(VK.h('span','err',e&&e.message||String(e)));
     if(zout)try{await zout.abort()}catch(_){}
   }
   running=false;$('#icancel').disabled=true;$('#istart').disabled=false;$('#iclear').disabled=false;
@@ -214,7 +214,7 @@ function init(){
   $('#idirfile').onchange=e=>{add(VK.fromInput(e.target.files));e.target.value=''};
   VK.setupDrop($('#idrop'),add);
   $('#istart').onclick=run;$('#icancel').onclick=()=>{cancel=true};
-  $('#iclear').onclick=()=>{list=[];$('#isum').hidden=true;$('#isum').dataset.skipped=0;$('#istart').disabled=true;$('#iclear').disabled=true;$('#ilog').innerHTML='';$('#iresult').innerHTML='';$('#ibar').style.width='0'};
+  $('#iclear').onclick=()=>{list=[];$('#isum').hidden=true;$('#isum').dataset.skipped=0;$('#istart').disabled=true;$('#iclear').disabled=true;$('#ilog').innerHTML='';$('#iresult').innerHTML='';$('#ibar').value=0};
 }
 window.VKI={init,add,run,list:()=>list,Zip,crc32,process,outInfo,dosFromMs,unixExtra};
 })();

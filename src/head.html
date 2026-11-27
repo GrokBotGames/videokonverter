@@ -2,6 +2,8 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="CSP_PLACEHOLDER">
+<meta name="referrer" content="no-referrer">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%230d1014%27/%3E%3Cpath d=%27M11 8l13 8-13 8z%27 fill=%27%233ddc57%27/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Video und Bild Konverter – Videos &amp; Bilder kleiner rechnen (lokal im Browser)</title>
@@ -58,8 +60,9 @@ input[type=range]{width:100%;accent-color:var(--ac)}
 .item .nm{font-weight:600;word-break:break-all}
 .item .meta{color:var(--mut);font-size:13px;margin-top:2px}
 .item .est{font-size:13px;margin-top:4px}
-.bar{height:8px;background:#0f1318;border-radius:99px;overflow:hidden;margin-top:8px;border:1px solid var(--line)}
-.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ac2),var(--ac));transition:width .25s}
+.bar{height:8px;background:#0f1318;border-radius:99px;overflow:hidden;margin-top:8px;border:1px solid var(--line);width:100%;display:block;accent-color:var(--ac);padding:0;-webkit-appearance:none;appearance:none}
+.bar::-webkit-progress-bar{background:#0f1318;border-radius:99px}
+.bar::-webkit-progress-value,.bar::-moz-progress-bar{background:linear-gradient(90deg,var(--ac2),var(--ac));border-radius:99px}
 .pt{font-size:13px;color:var(--mut);margin-top:4px}
 .item .acts{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .item video{width:100%;max-height:340px;margin-top:8px;border-radius:8px;background:#000}
@@ -74,7 +77,15 @@ table.lic td,table.lic th{border-bottom:1px solid var(--line);padding:6px 8px;te
 #ilog{max-height:300px;overflow:auto;font-size:13px;margin-top:10px;border:1px solid var(--line);border-radius:10px;background:#0f1318}
 #ilog div{padding:4px 10px;border-bottom:1px solid #1a212a;display:flex;gap:8px}
 #ilog div span.s{margin-left:auto;color:var(--mut);white-space:nowrap}
-footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
+
+.row.mid{justify-content:center;margin-top:14px}
+.mt0{margin-top:0}.mt6{margin-top:6px}.mt8{margin-top:8px}.mt10{margin-top:10px}.mt12{margin-top:12px}
+.mb12{margin:0 0 12px}
+a.ac{color:var(--ac)}
+footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center;line-height:1.55}
+footer .sec{display:block;margin:6px auto 0;max-width:740px}
+.offline{margin-top:10px}
+.offline .hint{display:block;margin-top:4px;font-size:12px;color:var(--mut)}
 @media(max-width:620px){.item{grid-template-columns:1fr}.thumb{width:100%;height:160px}}
 </style>
 </head>
@@ -84,6 +95,10 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
   <h1>Video und Bild <span>Konverter</span></h1>
   <p>Videos und Bilder kleiner rechnen – direkt hier im Browser.</p>
   <span class="badge">🔒 Alles bleibt auf deinem Gerät · kein Upload · kein Tracking · keine Werbung</span>
+  <div class="offline">
+    <a class="btn sm" id="offlinedl" download="Videokonverter.html" href="#">⬇ Zum Offline-Nutzen herunterladen</a>
+    <span class="hint" id="offlinehint">Eine HTML-Datei – speichern und ohne Internet öffnen (Chrome oder Edge).</span>
+  </div>
 </header>
 <nav class="tabs">
   <button data-tab="v" class="on">🎬 Videos</button>
@@ -97,7 +112,7 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
   <div class="drop" id="vdrop">
     <div class="big">Videos oder ganze Ordner hierher ziehen</div>
     <div class="sub">MP4, MOV, MKV, WebM … auch sehr große Dateien (mehrere GB) und lange Videos – sie werden stückweise gelesen, nicht komplett geladen.</div>
-    <div class="row" style="justify-content:center;margin-top:14px">
+    <div class="row mid">
       <button class="btn pri" id="vpick">Videos auswählen</button>
       <button class="btn" id="vpickdir">Ordner wählen</button>
     </div>
@@ -124,7 +139,7 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
           <select id="c_ab"><option value="64">64 kbit/s</option><option value="96">96 kbit/s</option><option value="128" selected>128 kbit/s</option><option value="192">192 kbit/s</option><option value="256">256 kbit/s</option></select></div>
       </div>
     </div>
-    <div class="note" id="outinfo" style="margin-top:10px"></div>
+    <div class="note mt10" id="outinfo"></div>
   </div>
 
   <div class="card">
@@ -134,10 +149,10 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
       <button class="btn sm" id="vdestoff" hidden>Zurücksetzen</button>
       <span class="note" id="vdesttxt"></span>
     </div>
-    <div class="note" style="margin-top:6px" id="vdesthelp"></div>
+    <div class="note mt6" id="vdesthelp"></div>
   </div>
 
-  <div class="row" style="margin:0 0 12px">
+  <div class="row mb12">
     <button class="btn pri" id="vstart" disabled>▶ Umrechnen starten</button>
     <button class="btn danger" id="vcancel" disabled>■ Abbrechen</button>
     <span class="sp"></span>
@@ -152,7 +167,7 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
   <div class="drop" id="idrop">
     <div class="big">Bilder oder ganze Ordner hierher ziehen</div>
     <div class="sub">JPG, PNG, WebP, BMP, AVIF – Unterordner werden mit eingelesen, andere Dateien werden übersprungen. Die Originale werden nie verändert.</div>
-    <div class="row" style="justify-content:center;margin-top:14px">
+    <div class="row mid">
       <button class="btn pri" id="ipick">Bilder auswählen</button>
       <button class="btn" id="ipickdir">Ordner wählen</button>
     </div>
@@ -161,22 +176,22 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
   </div>
   <div class="card">
     <h2>Einstellungen</h2>
-    <div class="grid2" style="margin-top:0">
+    <div class="grid2 mt0">
       <div><label class="f">Größte Kante (nie hochskaliert)</label>
         <select id="i_max"><option value="0">Original</option><option value="3840">3840 px</option><option value="2560">2560 px</option><option value="1920" selected>1920 px (Full HD)</option><option value="1280">1280 px</option><option value="1024">1024 px</option><option value="800">800 px</option><option value="640">640 px</option></select></div>
       <div><label class="f">Format</label>
         <select id="i_fmt"><option value="orig">wie Original (PNG bleibt PNG)</option><option value="jpeg">JPEG</option><option value="webp">WebP (kleiner)</option></select></div>
       <div><label class="f">Qualität: <b id="i_qv">80</b> %</label><input type="range" id="i_q" min="40" max="100" value="80"></div>
     </div>
-    <div class="note" style="margin-top:8px">Dateiname: <code>name_resized.jpg</code> · Ordnerstruktur bleibt erhalten · <b>Metadaten werden mitkopiert</b> (GPS, Aufnahmedatum, Kamera, IPTC, Farbprofil). Die Drehung wird ins Bild übernommen und in den Metadaten auf normal gesetzt, die Pixelmaße werden angepasst. In der ZIP bleibt die Original-Speicherzeit erhalten; im Zielordner setzt der Browser die Dateizeit auf „jetzt“ – die Original-Speicherzeit steht zusätzlich in den Metadaten (XMP).</div>
-    <div class="row" style="margin-top:12px">
+    <div class="note mt8">Dateiname: <code>name_resized.jpg</code> · Ordnerstruktur bleibt erhalten · <b>Metadaten werden mitkopiert</b> (GPS, Aufnahmedatum, Kamera, IPTC, Farbprofil). Die Drehung wird ins Bild übernommen und in den Metadaten auf normal gesetzt, die Pixelmaße werden angepasst. In der ZIP bleibt die Original-Speicherzeit erhalten; im Zielordner setzt der Browser die Dateizeit auf „jetzt“ – die Original-Speicherzeit steht zusätzlich in den Metadaten (XMP).</div>
+    <div class="row mt12">
       <button class="btn" id="idest">📁 Zielordner wählen</button>
       <button class="btn sm" id="idestoff" hidden>Zurücksetzen</button>
       <span class="note" id="idesttxt"></span>
     </div>
-    <div class="note" id="idesthelp" style="margin-top:6px"></div>
+    <div class="note mt6" id="idesthelp"></div>
   </div>
-  <div class="row" style="margin:0 0 12px">
+  <div class="row mb12">
     <button class="btn pri" id="istart" disabled>▶ Verkleinern starten</button>
     <button class="btn danger" id="icancel" disabled>■ Abbrechen</button>
     <span class="sp"></span>
@@ -184,10 +199,10 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
   </div>
   <div class="card" id="isum" hidden>
     <div class="row"><b id="icount"></b><span class="sp"></span><span class="note" id="isaved"></span></div>
-    <div class="bar"><i id="ibar"></i></div>
+    <progress class="bar" id="ibar" max="1000" value="0"></progress>
     <div class="pt" id="itxt"></div>
     <div id="ilog"></div>
-    <div class="acts row" style="margin-top:10px" id="iresult"></div>
+    <div class="acts row mt10" id="iresult"></div>
   </div>
 </section>
 
@@ -236,18 +251,20 @@ footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
     </ul>
   </div>
   <div class="card">
-    <h2>Datenschutz</h2>
-    <p>Diese Seite lädt zur Laufzeit nichts aus dem Internet nach. Die Videos und Bilder verlassen deinen Computer nie. Es gibt keine Cookies, kein Tracking und keine Werbung. Die Seite funktioniert auch offline, wenn du die Datei <code>index.html</code> speicherst und lokal öffnest (für WebCodecs ggf. über <code>http://localhost</code> oder die GitHub-Pages-Adresse).</p>
+    <h2>Datenschutz &amp; Sicherheit</h2>
+    <p>Diese Seite lädt zur Laufzeit nichts aus dem Internet nach. Die Videos und Bilder verlassen deinen Computer nie. Es gibt keine Cookies, kein Tracking und keine Werbung. Eine strikte <b>Content-Security-Policy</b> (im HTML als <code>meta</code>-Tag) verbietet Skripte, Verbindungen und Einbettungen außer dem, was diese eine Datei selbst mitbringt (inkl. WebAssembly für den AAC-Encoder und Worker aus <code>blob:</code>-URLs). Dateinamen und Metadaten werden nur als Text angezeigt, nie als HTML.</p>
+    <p>Die Richtlinie <code>frame-ancestors</code> (fremde Seiten dürfen diese App nicht im IFrame einbetten) lässt sich in einem <code>meta</code>-Tag nicht setzen, nur als HTTP-Header. GitHub Pages liefert diesen Header nicht. Wer die Datei selbst hostet, sollte zusätzlich senden: <code>Content-Security-Policy: frame-ancestors 'none'</code>.</p>
+    <p>Die Seite funktioniert offline: über den Knopf oben die HTML-Datei speichern und lokal öffnen, oder diese Seite unter <code>file://</code> öffnen. WebCodecs braucht einen sicheren Kontext – <code>file://</code> und <code>https://</code> gelten in Chrome/Edge als solcher; ein doppelklickbares Öffnen reicht dort in der Regel.</p>
   </div>
   <div class="card">
     <h2>Verwendete freie Software</h2>
     <table class="lic">
       <tr><th>Baustein</th><th>Zweck</th><th>Lizenz</th></tr>
-      <tr><td><a href="https://mediabunny.dev" style="color:var(--ac)">Mediabunny</a> 1.66.5 (Vanilagy)</td><td>MP4/WebM lesen &amp; schreiben, WebCodecs-Pipeline</td><td>MPL-2.0 (Quelltext unverändert eingebettet, Lizenztext im Repository)</td></tr>
-      <tr><td>@mediabunny/aac-encoder 1.66.5 (enthält FFmpeg-AAC-Encoder als WebAssembly)</td><td>AAC-Ton, falls der Browser selbst kein AAC kodieren kann</td><td>MPL-2.0; FFmpeg-Teil LGPL-2.1+ (Lizenztexte im Repository unter <code>licenses/</code>)</td></tr>
+      <tr><td><a href="https://mediabunny.dev" class="ac">Mediabunny</a> 1.66.5 (Vanilagy), SHA-256 <code>36c271a0888166ea2109668d0ae83eadf1494a84bd7cd30aa06d415054e0b71f</code></td><td>MP4/WebM lesen &amp; schreiben, WebCodecs-Pipeline</td><td>MPL-2.0 (Original in <code>vendor/</code>; in der HTML-Kopie wird nur die Encoder-Kennung geleert, Lizenztext im Repository)</td></tr>
+      <tr><td>@mediabunny/aac-encoder 1.66.5 (enthält FFmpeg-AAC-Encoder als WebAssembly), SHA-256 <code>258a5f22bee833f448789de385c3eac0104b8ef1c039083c8ef737539ca830ec</code></td><td>AAC-Ton, falls der Browser selbst kein AAC kodieren kann</td><td>MPL-2.0; FFmpeg-Teil LGPL-2.1+ (Lizenztexte im Repository unter <code>licenses/</code>)</td></tr>
     </table>
-    <p class="note">Die Bibliotheken sind unverändert und als lesbarer, austauschbarer Block in diese Datei eingebettet; die Quelltexte gibt es bei den Projekten auf npm/GitHub und im Repository dieser Seite.</p>
+    <p class="note">Die unveränderten Originaldateien liegen im Repository unter <code>vendor/</code> (SHA-256 oben, npm-Pakete 1.66.5). Beim Erzeugen dieser HTML-Datei wird in der eingebetteten Mediabunny-Kopie die Tool-Kennung <code>Mediabunny v…</code> durch einen leeren Text ersetzt, damit MP4/WebM keine Encoder-Signatur tragen (MPL-2.0: diese eine Anpassung ist hier dokumentiert). Der AAC-Encoder bleibt byte-genau unverändert.</p>
   </div>
 </section>
-<footer>Video und Bild Konverter · läuft komplett lokal · <span id="ver"></span></footer>
+<footer>Video und Bild Konverter · <span id="ver"></span><span class="sec">Sicherheit: Läuft komplett lokal im Browser · kein Upload, kein Tracking, keine Internetverbindung (per CSP gesperrt) · Originale werden nie verändert · Open Source.</span></footer>
 </div>
