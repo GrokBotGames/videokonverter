@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%230d1014%27/%3E%3Cpath d=%27M11 8l13 8-13 8z%27 fill=%27%233ddc57%27/%3E%3C/svg%3E">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Videokonverter – Videos & Bilder kleiner rechnen (lokal im Browser)</title>
+<meta name="description" content="Videos und Bilder direkt im Browser kleiner rechnen. Kein Upload, kein Tracking, funktioniert offline.">
+<style>
+:root{--bg:#0d1014;--card:#151a21;--card2:#1b222b;--line:#262f3a;--tx:#e8edf3;--mut:#8b98a8;--ac:#3ddc57;--ac2:#1fa83a;--warn:#ffb84d;--err:#ff6b6b;--r:14px}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{min-height:100vh;background:radial-gradient(1200px 500px at 50% -200px,#12301b 0,transparent 70%),var(--bg)}
+.wrap{max-width:980px;margin:0 auto;padding:22px 16px 60px}
+header h1{margin:0;font-size:28px;letter-spacing:.2px}
+header h1 span{color:var(--ac)}
+header p{margin:4px 0 0;color:var(--mut)}
+.badge{display:inline-block;font-size:12px;color:var(--ac);border:1px solid #1f5a2b;background:#10261a;border-radius:99px;padding:2px 10px;margin-top:8px}
+.tabs{display:flex;gap:6px;margin:18px 0 14px;border-bottom:1px solid var(--line)}
+.tabs button{background:none;border:0;color:var(--mut);font:inherit;font-weight:600;padding:10px 16px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--tx);border-color:var(--ac)}
+.tabs button:hover{color:var(--tx)}
+section.tab{display:none}section.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:16px}
+.drop{border:2px dashed #34414f;border-radius:var(--r);padding:30px 16px;text-align:center;background:var(--card);transition:.15s;margin-bottom:14px}
+.drop.over{border-color:var(--ac);background:#10261a}
+.drop .big{font-size:18px;font-weight:600}
+.drop .sub{color:var(--mut);font-size:13px;margin-top:4px}
+.btn{background:var(--card2);color:var(--tx);border:1px solid #33404f;border-radius:10px;padding:9px 16px;font:inherit;font-weight:600;cursor:pointer;transition:.12s}
+.btn:hover:not(:disabled){border-color:var(--ac)}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.pri{background:var(--ac2);border-color:var(--ac);color:#04140a}
+.btn.pri:hover:not(:disabled){background:var(--ac)}
+.btn.danger:hover:not(:disabled){border-color:var(--err);color:var(--err)}
+.btn.sm{padding:5px 11px;font-size:13px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.sp{flex:1}
+.presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:10px}
+.preset{border:1px solid var(--line);background:var(--card2);border-radius:12px;padding:11px 13px;cursor:pointer;position:relative;text-align:left;color:var(--tx);font:inherit}
+.preset:hover{border-color:#3c4b5c}
+.preset.on{border-color:var(--ac);background:#10261a}
+.preset b{display:block}
+.preset small{color:var(--mut)}
+.preset .tag{font-size:11px;font-weight:600;color:var(--ac);border:1px solid #1f5a2b;border-radius:99px;padding:0 7px;margin-left:6px;white-space:nowrap}
+.grid2{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-top:12px}
+label.f{display:block;font-size:12px;color:var(--mut)}
+select,input[type=text],input[type=number]{width:100%;background:#0f1318;color:var(--tx);border:1px solid #33404f;border-radius:8px;padding:8px 10px;font:inherit;margin-top:3px}
+input[type=range]{width:100%;accent-color:var(--ac)}
+.chk{display:flex;align-items:center;gap:8px;color:var(--tx);margin-top:6px}
+.note{color:var(--mut);font-size:13px}
+.warn{color:var(--warn)}.err{color:var(--err)}.ok{color:var(--ac)}
+#banner .b{border:1px solid #6b4a12;background:#2a1f0c;color:#ffd699;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:14px}
+#banner .b.info{border-color:#1f5a2b;background:#10261a;color:#bdf0c6}
+.item{display:grid;grid-template-columns:140px 1fr;gap:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px;margin-bottom:10px}
+.thumb{width:140px;height:79px;background:#0a0d11;border-radius:8px;object-fit:cover;display:flex;align-items:center;justify-content:center;color:#455;font-size:28px;overflow:hidden}
+.thumb canvas{width:100%;height:100%;object-fit:cover;border-radius:8px}
+.item .nm{font-weight:600;word-break:break-all}
+.item .meta{color:var(--mut);font-size:13px;margin-top:2px}
+.item .est{font-size:13px;margin-top:4px}
+.bar{height:8px;background:#0f1318;border-radius:99px;overflow:hidden;margin-top:8px;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ac2),var(--ac));transition:width .25s}
+.pt{font-size:13px;color:var(--mut);margin-top:4px}
+.item .acts{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.item video{width:100%;max-height:340px;margin-top:8px;border-radius:8px;background:#000}
+.trim{margin-top:8px;display:flex;gap:10px;flex-wrap:wrap;align-items:end;font-size:13px}
+.trim input{width:110px}
+details{margin-top:8px}summary{cursor:pointer;color:var(--mut)}
+.help h3{margin:18px 0 6px;font-size:15px}
+.help ul,.help ol{margin:6px 0 6px 20px;padding:0}
+.help code,kbd{background:#0f1318;border:1px solid var(--line);border-radius:5px;padding:0 5px}
+table.lic{border-collapse:collapse;width:100%;font-size:13px}
+table.lic td,table.lic th{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+#ilog{max-height:300px;overflow:auto;font-size:13px;margin-top:10px;border:1px solid var(--line);border-radius:10px;background:#0f1318}
+#ilog div{padding:4px 10px;border-bottom:1px solid #1a212a;display:flex;gap:8px}
+#ilog div span.s{margin-left:auto;color:var(--mut);white-space:nowrap}
+footer{margin-top:26px;color:var(--mut);font-size:12px;text-align:center}
+@media(max-width:620px){.item{grid-template-columns:1fr}.thumb{width:100%;height:160px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>Video<span>konverter</span></h1>
+  <p>Videos und Bilder kleiner rechnen – direkt hier im Browser.</p>
+  <span class="badge">🔒 Alles bleibt auf deinem Gerät · kein Upload · kein Tracking · keine Werbung</span>
+</header>
+<nav class="tabs">
+  <button data-tab="v" class="on">🎬 Videos</button>
+  <button data-tab="i">🖼️ Bilder</button>
+  <button data-tab="h">ℹ️ Hilfe &amp; Grenzen</button>
+</nav>
+<div id="banner"></div>
+
+<!-- ============ VIDEOS ============ -->
+<section class="tab on" id="tab-v">
+  <div class="drop" id="vdrop">
+    <div class="big">Videos oder ganze Ordner hierher ziehen</div>
+    <div class="sub">MP4, MOV, MKV, WebM … auch sehr große Dateien (mehrere GB) und lange Videos – sie werden stückweise gelesen, nicht komplett geladen.</div>
+    <div class="row" style="justify-content:center;margin-top:14px">
+      <button class="btn pri" id="vpick">Videos auswählen</button>
+      <button class="btn" id="vpickdir">Ordner wählen</button>
+    </div>
+    <input type="file" id="vfile" accept="video/*,.mp4,.m4v,.mov,.mkv,.webm,.avi" multiple hidden>
+    <input type="file" id="vdirfile" webkitdirectory multiple hidden>
+  </div>
+
+  <div class="card">
+    <h2>Qualität</h2>
+    <div class="presets" id="presets"></div>
+    <div id="custom" hidden>
+      <div class="grid2">
+        <div><label class="f">Auflösung (kürzere Seite, nie hochskaliert)</label>
+          <select id="c_res"><option value="orig">Original</option><option value="1440">1440p</option><option value="1080">1080p</option><option value="720" selected>720p</option><option value="480">480p</option><option value="360">360p</option></select></div>
+        <div><label class="f">Bildrate</label>
+          <select id="c_fps"><option value="orig">Original</option><option value="60">max. 60 fps</option><option value="30" selected>30 fps</option><option value="24">24 fps</option></select></div>
+        <div><label class="f">Steuerung</label>
+          <select id="c_mode"><option value="bitrate">Bitrate (Mbit/s)</option><option value="size">Zielgröße (MB)</option></select></div>
+        <div id="c_brw"><label class="f">Video-Bitrate (Mbit/s)</label><input type="number" id="c_mbit" min="0.2" max="60" step="0.1" value="3"></div>
+        <div id="c_szw" hidden><label class="f">Zielgröße pro Datei (MB)</label><input type="number" id="c_mb" min="1" step="1" value="100"></div>
+        <div><label class="f">Audio</label>
+          <select id="c_audio"><option value="keep">behalten</option><option value="none">entfernen</option></select></div>
+        <div id="c_abw"><label class="f">Audio-Bitrate</label>
+          <select id="c_ab"><option value="64">64 kbit/s</option><option value="96">96 kbit/s</option><option value="128" selected>128 kbit/s</option><option value="192">192 kbit/s</option><option value="256">256 kbit/s</option></select></div>
+      </div>
+    </div>
+    <div class="note" id="outinfo" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <h2>Speicherort</h2>
+    <div class="row">
+      <button class="btn" id="vdest">📁 Zielordner wählen</button>
+      <button class="btn sm" id="vdestoff" hidden>Zurücksetzen</button>
+      <span class="note" id="vdesttxt"></span>
+    </div>
+    <div class="note" style="margin-top:6px" id="vdesthelp"></div>
+  </div>
+
+  <div class="row" style="margin:0 0 12px">
+    <button class="btn pri" id="vstart" disabled>▶ Umrechnen starten</button>
+    <button class="btn danger" id="vcancel" disabled>■ Abbrechen</button>
+    <span class="sp"></span>
+    <button class="btn" id="vall" disabled>⬇ Alle herunterladen</button>
+    <button class="btn" id="vclear" disabled>Liste leeren</button>
+  </div>
+  <div id="queue"></div>
+</section>
+
+<!-- ============ BILDER ============ -->
+<section class="tab" id="tab-i">
+  <div class="drop" id="idrop">
+    <div class="big">Bilder oder ganze Ordner hierher ziehen</div>
+    <div class="sub">JPG, PNG, WebP, BMP, AVIF – Unterordner werden mit eingelesen, andere Dateien werden übersprungen. Die Originale werden nie verändert.</div>
+    <div class="row" style="justify-content:center;margin-top:14px">
+      <button class="btn pri" id="ipick">Bilder auswählen</button>
+      <button class="btn" id="ipickdir">Ordner wählen</button>
+    </div>
+    <input type="file" id="ifile" accept="image/*" multiple hidden>
+    <input type="file" id="idirfile" webkitdirectory multiple hidden>
+  </div>
+  <div class="card">
+    <h2>Einstellungen</h2>
+    <div class="grid2" style="margin-top:0">
+      <div><label class="f">Größte Kante (nie hochskaliert)</label>
+        <select id="i_max"><option value="0">Original</option><option value="3840">3840 px</option><option value="2560">2560 px</option><option value="1920" selected>1920 px (Full HD)</option><option value="1280">1280 px</option><option value="1024">1024 px</option><option value="800">800 px</option><option value="640">640 px</option></select></div>
+      <div><label class="f">Format</label>
+        <select id="i_fmt"><option value="orig">wie Original (PNG bleibt PNG)</option><option value="jpeg">JPEG</option><option value="webp">WebP (kleiner)</option></select></div>
+      <div><label class="f">Qualität: <b id="i_qv">80</b> %</label><input type="range" id="i_q" min="40" max="100" value="80"></div>
+    </div>
+    <div class="note" style="margin-top:8px">Dateiname: <code>name_resized.jpg</code> · Ordnerstruktur bleibt erhalten · EXIF/GPS-Daten werden entfernt (Drehung wird übernommen).</div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="idest">📁 Zielordner wählen</button>
+      <button class="btn sm" id="idestoff" hidden>Zurücksetzen</button>
+      <span class="note" id="idesttxt"></span>
+    </div>
+    <div class="note" id="idesthelp" style="margin-top:6px"></div>
+  </div>
+  <div class="row" style="margin:0 0 12px">
+    <button class="btn pri" id="istart" disabled>▶ Verkleinern starten</button>
+    <button class="btn danger" id="icancel" disabled>■ Abbrechen</button>
+    <span class="sp"></span>
+    <button class="btn" id="iclear" disabled>Liste leeren</button>
+  </div>
+  <div class="card" id="isum" hidden>
+    <div class="row"><b id="icount"></b><span class="sp"></span><span class="note" id="isaved"></span></div>
+    <div class="bar"><i id="ibar"></i></div>
+    <div class="pt" id="itxt"></div>
+    <div id="ilog"></div>
+    <div class="acts row" style="margin-top:10px" id="iresult"></div>
+  </div>
+</section>
+
+<!-- ============ HILFE ============ -->
+<section class="tab help" id="tab-h">
+  <div class="card">
+    <h2>So kommen Xbox-Clips auf den PC</h2>
+    <ol>
+      <li><b>Über die Xbox-Cloud:</b> An der Xbox <i>Aufnahmen &amp; Teilen → Zuletzt aufgenommen</i>, Clip wählen und „Hochladen“ bzw. „Teilen“. Danach in der <b>Xbox-App</b> (Handy oder Windows-PC, Bereich „Aufnahmen“) ansehen und auf das Gerät herunterladen.</li>
+      <li><b>USB-Stick (am zuverlässigsten für große Clips):</b> An der Xbox <i>Aufnahmen &amp; Teilen → Zuletzt aufgenommen → Clip wählen → Auf USB-Laufwerk kopieren</i> (Stick in exFAT oder NTFS). Stick am PC einstecken und die MP4s kopieren.</li>
+      <li><b>OneDrive:</b> Clips lassen sich über das Teilen-Menü der Xbox auf OneDrive legen. Am PC dann aus dem OneDrive-Ordner hierher ziehen.</li>
+      <li>Aufnahmen mit der <b>Xbox Game Bar am PC</b> (Windows-Taste + G) liegen unter <code>Videos\Captures</code>.</li>
+      <li>Die Dateien dann hier ins Fenster ziehen. Tipp: Clips mit <b>HDR</b> oder <b>HEVC</b> (H.265) kann nicht jeder Browser lesen – in den Xbox-Einstellungen unter <i>Aufnahmen</i> „H.264“ und SDR wählen, falls es Probleme gibt.</li>
+    </ol>
+    <h3>Welche Qualität wofür?</h3>
+    <ul>
+      <li><b>Hoch</b> – fast wie das Original, spart bei Xbox-Clips (oft 15–50 Mbit/s) trotzdem sehr viel.</li>
+      <li><b>Mittel / Klein</b> – gut für Handy, Familie, YouTube-Entwürfe.</li>
+      <li><b>Sehr klein</b> – für WhatsApp, Discord &amp; Co. (Datei-Limits).</li>
+      <li><b>Bildschirmaufnahme / Webinar</b> – wenig Bewegung, daher sehr niedrige Bitrate bei 30 fps; Sprache bleibt gut verständlich.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Grenzen &amp; Hinweise zum Browser</h2>
+    <ul>
+      <li><b>Empfohlen: Chrome oder Edge</b> (Windows/Mac/Linux, aktuelle Version). Dort läuft die schnelle Umrechnung mit WebCodecs (mit Grafikkarten-Hilfe) und die Ausgabe wird direkt auf die Festplatte geschrieben.</li>
+      <li><b>Sehr große Dateien (&gt; 4 GB, bis ca. 15 GB) und lange Videos (2 h):</b> Die Datei wird stückweise gelesen, das Ergebnis streamend geschrieben (MP4 mit 64-Bit-Offsets). Dafür am besten einen <b>Zielordner wählen</b> (Chrome/Edge). Ohne Zielordner wird ein temporärer Browser-Speicher (OPFS) benutzt – dafür muss auf dem Laufwerk genug Platz frei sein.</li>
+      <li><b>Dauer:</b> Ein 2-Stunden-Video braucht je nach PC grob 20–60 Minuten. Laptop am Strom lassen, den Tab offen und das Fenster nicht minimieren (der Konverter verhindert den Ruhezustand, solange er arbeitet). Der PC darf nicht in den Standby gehen.</li>
+      <li><b>Firefox / Safari:</b> Neuere Versionen können WebCodecs, aber teils ohne H.264-Kodierung oder ohne Zielordner-Funktion. Dann geht der Konverter automatisch auf WebM/den langsameren Echtzeit-Modus (MediaRecorder) zurück – das Video wird dann in Originaldauer abgespielt und neu aufgenommen. Für große Dateien bitte Chrome/Edge nehmen.</li>
+      <li><b>HEVC/H.265, HDR, 10 Bit:</b> Kann dein Browser den Codec nicht dekodieren, steht eine Meldung an der Datei. Unter Windows hilft evtl. die „HEVC-Videoerweiterungen“ aus dem Microsoft Store. HDR-Clips werden als SDR umgerechnet und können blass aussehen.</li>
+      <li>Das Ergebnis ist <b>MP4 (H.264 + AAC)</b>, spielt auf praktisch allen Geräten. Nur wenn der Browser H.264 nicht kodieren kann, entsteht <b>WebM (VP9 + Opus)</b>.</li>
+      <li>Videos mit mehreren Audiospuren: Es werden alle Spuren übernommen, die der Browser dekodieren kann.</li>
+      <li>Beim <b>Kürzen</b> wird neu kodiert, der Schnitt ist bildgenau.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h2>Datenschutz</h2>
+    <p>Diese Seite lädt zur Laufzeit nichts aus dem Internet nach. Die Videos und Bilder verlassen deinen Computer nie. Es gibt keine Cookies, kein Tracking und keine Werbung. Die Seite funktioniert auch offline, wenn du die Datei <code>index.html</code> speicherst und lokal öffnest (für WebCodecs ggf. über <code>http://localhost</code> oder die GitHub-Pages-Adresse).</p>
+  </div>
+  <div class="card">
+    <h2>Verwendete freie Software</h2>
+    <table class="lic">
+      <tr><th>Baustein</th><th>Zweck</th><th>Lizenz</th></tr>
+      <tr><td><a href="https://mediabunny.dev" style="color:var(--ac)">Mediabunny</a> 1.66.5 (Vanilagy)</td><td>MP4/WebM lesen &amp; schreiben, WebCodecs-Pipeline</td><td>MPL-2.0 (Quelltext unverändert eingebettet, Lizenztext im Repository)</td></tr>
+      <tr><td>@mediabunny/aac-encoder 1.66.5 (enthält FFmpeg-AAC-Encoder als WebAssembly)</td><td>AAC-Ton, falls der Browser selbst kein AAC kodieren kann</td><td>MPL-2.0; FFmpeg-Teil LGPL-2.1+ (Lizenztexte im Repository unter <code>licenses/</code>)</td></tr>
+    </table>
+    <p class="note">Die Bibliotheken sind unverändert und als lesbarer, austauschbarer Block in diese Datei eingebettet; die Quelltexte gibt es bei den Projekten auf npm/GitHub und im Repository dieser Seite.</p>
+  </div>
+</section>
+<footer>Videokonverter · läuft komplett lokal · <span id="ver"></span></footer>
+</div>
